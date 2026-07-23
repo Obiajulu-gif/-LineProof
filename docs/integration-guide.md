@@ -2,6 +2,16 @@
 
 This guide walks through integrating LineProof into your application.
 
+## HTTP API contract
+
+The backend publishes a machine-readable OpenAPI 3.1 contract at [`docs/api-reference/openapi.yaml`](./api-reference/openapi.yaml). When running the backend locally, use:
+
+- `GET /api/openapi.json` for the bundled JSON document used by clients and test tooling.
+- `GET /api/docs` for interactive Swagger UI in non-production environments.
+- `pnpm --filter @lineproof/backend openapi:generate` after changing a registered route or schema.
+
+CI runs `openapi:check` and rejects a pull request when the committed path or schema registry no longer matches the backend contract.
+
 ## Prerequisites
 
 1. **Stellar Account**: Create or use an existing Stellar keypair
@@ -48,7 +58,6 @@ const queueAddress = await factory.createQueue(params);
 ## Step 4: Participant Enrollment
 
 ```typescript
-// Create a client for the participant
 const participantClient = new LineProofClient({
   networkPassphrase: NetworkPassphrase.TESTNET,
   rpcServerUrl: 'https://soroban-testnet.stellar.org',
@@ -70,7 +79,6 @@ console.log('Advanced at:', position.advancedAt);
 ## Step 6: Advance Queue (Admin)
 
 ```typescript
-// Advance up to 100 positions
 const advancedIds = await factory.advance(queueAddress, 100);
 console.log('Advanced positions:', advancedIds);
 ```
@@ -80,7 +88,6 @@ console.log('Advanced positions:', advancedIds);
 If escrow is required:
 
 ```typescript
-// Deposit into escrow
 const depositTx = await client.escrow.deposit(queueAddress, amount);
 
 // Release upon advancement (handled automatically)
