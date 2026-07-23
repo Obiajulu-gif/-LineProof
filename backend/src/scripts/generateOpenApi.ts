@@ -8,7 +8,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(scriptDir, '../../../docs/api-reference/openapi.yaml');
 const checking = process.argv.includes('--check');
 
-function sortedKeys(value: Record<string, unknown>): string[] {
+function sortedKeys(value: object): string[] {
   return Object.keys(value).sort();
 }
 
