@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openApiDocument, serializeOpenApiDocument } from '../openapi.js';
+import { openApiDocument } from '../openapi.js';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const outputPath = resolve(scriptDir, '../../../docs/api-reference/openapi.yaml');
@@ -13,8 +13,12 @@ function sortedKeys(value: Record<string, unknown>): string[] {
 }
 
 function contractFingerprint(): string {
+  const contractIndex = {
+    paths: sortedKeys(openApiDocument.paths),
+    schemas: sortedKeys(openApiDocument.components.schemas),
+  };
   return createHash('sha256')
-    .update(JSON.stringify(openApiDocument))
+    .update(JSON.stringify(contractIndex))
     .digest('hex');
 }
 
