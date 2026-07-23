@@ -17,6 +17,7 @@ export interface ContractIds {
 export interface BackendConfig {
   nodeEnv: string;
   port: number;
+  shutdownTimeoutMs: number;
   databaseUrl?: string | undefined;
   sorobanRpcUrl: string;
   stellarNetwork: string;
@@ -37,8 +38,17 @@ function readContractId(
   canonical: string,
   legacy: string,
 ): string | undefined {
-  const value = (env[canonical] ?? env[legacy] ?? "").trim();
+  const value = (env[canonical] ?? env[legacy] ?? '').trim();
   return value.length > 0 ? value : undefined;
+}
+
+function readPositiveInteger(
+  rawValue: string | undefined,
+  fallback: number,
+): number {
+  if (!rawValue) return fallback;
+  const value = Number(rawValue);
+  return Number.isSafeInteger(value) && value > 0 ? value : fallback;
 }
 
 export function loadConfig(
@@ -47,28 +57,28 @@ export function loadConfig(
   const contractIds: ContractIds = {
     factory: readContractId(
       env,
-      "QUEUE_FACTORY_CONTRACT_ID",
-      "LINEPROOF_FACTORY_CONTRACT_ID",
+      'QUEUE_FACTORY_CONTRACT_ID',
+      'LINEPROOF_FACTORY_CONTRACT_ID',
     ),
     queue: readContractId(
       env,
-      "QUEUE_CONTRACT_ID",
-      "LINEPROOF_QUEUE_CONTRACT_ID",
+      'QUEUE_CONTRACT_ID',
+      'LINEPROOF_QUEUE_CONTRACT_ID',
     ),
     enrollment: readContractId(
       env,
-      "ENROLLMENT_CONTRACT_ID",
-      "LINEPROOF_ENROLLMENT_CONTRACT_ID",
+      'ENROLLMENT_CONTRACT_ID',
+      'LINEPROOF_ENROLLMENT_CONTRACT_ID',
     ),
     identity: readContractId(
       env,
-      "IDENTITY_CONTRACT_ID",
-      "LINEPROOF_IDENTITY_CONTRACT_ID",
+      'IDENTITY_CONTRACT_ID',
+      'LINEPROOF_IDENTITY_CONTRACT_ID',
     ),
     escrow: readContractId(
       env,
-      "ESCROW_CONTRACT_ID",
-      "LINEPROOF_ESCROW_CONTRACT_ID",
+      'ESCROW_CONTRACT_ID',
+      'LINEPROOF_ESCROW_CONTRACT_ID',
     ),
   };
 
@@ -77,13 +87,14 @@ export function loadConfig(
   );
 
   return {
-    nodeEnv: env.NODE_ENV ?? "development",
+    nodeEnv: env.NODE_ENV ?? 'development',
     port: env.PORT ? Number(env.PORT) : 4000,
+    shutdownTimeoutMs: readPositiveInteger(env.SHUTDOWN_TIMEOUT_MS, 30_000),
     databaseUrl: env.DATABASE_URL?.trim() || undefined,
     sorobanRpcUrl:
       env.SOROBAN_RPC_URL?.trim() ||
-      (contractsConfigured ? "" : "https://soroban-testnet.stellar.org"),
-    stellarNetwork: env.STELLAR_NETWORK?.trim() || "TESTNET",
+      (contractsConfigured ? '' : 'https://soroban-testnet.stellar.org'),
+    stellarNetwork: env.STELLAR_NETWORK?.trim() || 'TESTNET',
     networkPassphrase: env.NETWORK_PASSPHRASE?.trim() || undefined,
     operatorSecretKey: env.OPERATOR_SECRET_KEY?.trim() || undefined,
     contractIds,
@@ -95,14 +106,14 @@ export function loadConfig(
 export function validateStartupConfig(value: BackendConfig): void {
   if (!value.contractsConfigured) return;
   const missing: string[] = [];
-  if (!value.contractIds.enrollment) missing.push("ENROLLMENT_CONTRACT_ID");
-  if (!value.contractIds.escrow) missing.push("ESCROW_CONTRACT_ID");
-  if (!value.contractIds.factory) missing.push("QUEUE_FACTORY_CONTRACT_ID");
-  if (!value.sorobanRpcUrl) missing.push("SOROBAN_RPC_URL");
-  if (!value.networkPassphrase) missing.push("NETWORK_PASSPHRASE");
+  if (!value.contractIds.enrollment) missing.push('ENROLLMENT_CONTRACT_ID');
+  if (!value.contractIds.escrow) missing.push('ESCROW_CONTRACT_ID');
+  if (!value.contractIds.factory) missing.push('QUEUE_FACTORY_CONTRACT_ID');
+  if (!value.sorobanRpcUrl) missing.push('SOROBAN_RPC_URL');
+  if (!value.networkPassphrase) missing.push('NETWORK_PASSPHRASE');
   if (missing.length > 0) {
     throw new Error(
-      `Incomplete Soroban configuration: missing ${missing.join(", ")}`,
+      `Incomplete Soroban configuration: missing ${missing.join(', ')}`,
     );
   }
 }
