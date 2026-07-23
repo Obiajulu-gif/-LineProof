@@ -22,19 +22,22 @@ export function createApp(): Express {
     .split(',')
     .map((origin) => origin.trim());
 
-  app.use(helmet({
-    contentSecurityPolicy:
-      process.env.NODE_ENV === 'production'
-        ? undefined
-        : {
-            directives: {
-              defaultSrc: ["'self'"],
-              scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
-              styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
-              imgSrc: ["'self'", 'data:', 'https:'],
-            },
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet());
+  } else {
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            imgSrc: ["'self'", 'data:', 'https:'],
           },
-  }));
+        },
+      }),
+    );
+  }
   app.use(cors({ origin: allowedOrigins }));
   app.use(requestId);
 
