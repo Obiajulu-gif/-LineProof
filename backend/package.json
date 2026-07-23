@@ -10,7 +10,9 @@
     "lint": "eslint src/ --ext ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "openapi:generate": "tsx src/scripts/generateOpenApi.ts",
+    "openapi:check": "tsx src/scripts/generateOpenApi.ts --check"
   },
   "dependencies": {
     "@lineproof/sdk": "workspace:*",

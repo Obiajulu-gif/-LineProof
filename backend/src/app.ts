@@ -13,17 +13,43 @@ import { requestId } from './middleware/requestId.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { register, METRICS_CONTENT_TYPE } from './metrics/registry.js';
 import { healthPayload } from './health.js';
+import { openApiDocument, renderSwaggerUi } from './openapi.js';
 
 export function createApp(): Express {
   const app: Express = express();
 
   const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
     .split(',')
-    .map((o) => o.trim());
+    .map((origin) => origin.trim());
 
-  app.use(helmet());
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet());
+  } else {
+    app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            imgSrc: ["'self'", 'data:', 'https:'],
+          },
+        },
+      }),
+    );
+  }
   app.use(cors({ origin: allowedOrigins }));
   app.use(requestId);
+
+  app.get('/api/openapi.json', (_req, res) => {
+    res.json(openApiDocument);
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('/api/docs', (_req, res) => {
+      res.type('html').send(renderSwaggerUi());
+    });
+  }
 
   // GET /metrics is mounted before logging and rate limiting so scrapes are never
   // throttled (issue #31) and don't pollute request metrics with self-traffic.
@@ -31,8 +57,8 @@ export function createApp(): Express {
     try {
       res.setHeader('Content-Type', METRICS_CONTENT_TYPE);
       res.send(await register.metrics());
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      next(error);
     }
   });
 
@@ -46,7 +72,7 @@ export function createApp(): Express {
   app.use(requestLogger);
   app.use(defaultRateLimiter);
 
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json(healthPayload());
   });
 
@@ -56,7 +82,7 @@ export function createApp(): Express {
   app.use('/public', publicRoutes);
 
   app.use(errorHandler);
-  
+
   return app;
 }
 

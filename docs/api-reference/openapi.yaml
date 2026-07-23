@@ -1,0 +1,70 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LineProof Backend API",
+    "version": "0.1.0",
+    "description": "Generated API contract. The fully bundled document is served by GET /api/openapi.json."
+  },
+  "x-lineproof-contract-fingerprint": "7598e00255dacbc7b91114d8143f21f0c8b8eb5e1557c9a3f60c5860f7e417f7",
+  "paths": {
+    "/health": {"get":{"summary":"Backend health","responses":{"200":{"description":"Health payload"}}}},
+    "/api/openapi.json": {"get":{"summary":"OpenAPI 3.1 document","responses":{"200":{"description":"OpenAPI JSON"}}}},
+    "/api/docs": {"get":{"summary":"Swagger UI in non-production","responses":{"200":{"description":"Interactive API documentation"}}}},
+    "/api/queues": {
+      "get":{"summary":"List queues","parameters":[{"name":"status","in":"query"},{"name":"limit","in":"query"},{"name":"cursor","in":"query"}],"responses":{"200":{"description":"Paginated queue list"}}},
+      "post":{"summary":"Create queue","requestBody":{"$ref":"#/components/requestBodies/CreateQueue"},"responses":{"201":{"description":"Created queue"}}}
+    },
+    "/api/queues/{id}": {"get":{"summary":"Get queue","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Queue with data source"},"404":{"description":"Not found"}}}},
+    "/api/queues/{id}/stats": {"get":{"summary":"Get queue statistics","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Queue statistics"}}}},
+    "/api/queues/{id}/advance": {"post":{"summary":"Advance queue","parameters":[{"$ref":"#/components/parameters/Id"}],"requestBody":{"$ref":"#/components/requestBodies/AdvanceQueue"},"responses":{"200":{"description":"Updated queue"}}}},
+    "/api/queues/{id}/close": {"post":{"summary":"Close queue","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Updated queue"}}}},
+    "/api/queues/{id}/open-enrollment": {"post":{"summary":"Open enrollment","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Updated queue"}}}},
+    "/api/queues/{id}/close-enrollment": {"post":{"summary":"Close enrollment","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Updated queue"}}}},
+    "/api/enrollments/enroll": {"post":{"summary":"Enroll identity","requestBody":{"$ref":"#/components/requestBodies/Enroll"},"responses":{"201":{"description":"Enrollment record"},"409":{"description":"Duplicate enrollment"}}}},
+    "/api/enrollments/cancel": {"post":{"summary":"Cancel enrollment","requestBody":{"$ref":"#/components/requestBodies/CancelEnrollment"},"responses":{"200":{"description":"Cancellation confirmation"}}}},
+    "/api/enrollments/queue/{queueId}": {"get":{"summary":"List queue enrollments","parameters":[{"name":"queueId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Enrollment records"}}}},
+    "/api/enrollments/{identity}": {"get":{"summary":"List identity enrollments","parameters":[{"name":"identity","in":"path","required":true,"schema":{"type":"string","pattern":"^G[A-Z2-7]{55}$"}}],"responses":{"200":{"description":"Enrollment records"}}}},
+    "/api/escrow/deposit": {"post":{"summary":"Deposit escrow","requestBody":{"$ref":"#/components/requestBodies/Deposit"},"responses":{"201":{"description":"Escrow record"}}}},
+    "/api/escrow/release": {"post":{"summary":"Release escrow","requestBody":{"$ref":"#/components/requestBodies/EscrowAction"},"responses":{"200":{"description":"Escrow record"}}}},
+    "/api/escrow/refund": {"post":{"summary":"Refund escrow","requestBody":{"$ref":"#/components/requestBodies/EscrowAction"},"responses":{"200":{"description":"Escrow record"}}}},
+    "/api/escrow/expire": {"post":{"summary":"Expire escrow","requestBody":{"$ref":"#/components/requestBodies/EscrowAction"},"responses":{"200":{"description":"Escrow record"},"422":{"description":"Escrow not expired"}}}},
+    "/api/escrow/{id}": {"get":{"summary":"Get escrow","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Escrow record"},"404":{"description":"Not found"}}}},
+    "/public/queues": {"get":{"summary":"Public queue summaries","responses":{"200":{"description":"Public queue summaries"}}}},
+    "/public/queues/{id}/stats": {"get":{"summary":"Public queue statistics","parameters":[{"$ref":"#/components/parameters/Id"}],"responses":{"200":{"description":"Public queue statistics"}}}},
+    "/public/health": {"get":{"summary":"Redirect to /health","responses":{"301":{"description":"Permanent redirect"}}}}
+  },
+  "components": {
+    "parameters": {
+      "Id": {"name":"id","in":"path","required":true,"schema":{"type":"string"}}
+    },
+    "requestBodies": {
+      "CreateQueue":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateQueue"}}}},
+      "AdvanceQueue":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdvanceQueue"}}}},
+      "Enroll":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Enroll"}}}},
+      "CancelEnrollment":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CancelEnrollment"}}}},
+      "Deposit":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Deposit"}}}},
+      "EscrowAction":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/EscrowAction"}}}}
+    },
+    "schemas": {
+      "AdvanceQueue":{"type":"object","properties":{"batchSize":{"type":"integer","minimum":1,"maximum":1000}}},
+      "CancelEnrollment":{"type":"object","required":["queueId","identity"],"properties":{"queueId":{"type":"string"},"identity":{"type":"string","pattern":"^G[A-Z2-7]{55}$"}}},
+      "CreateQueue":{"type":"object","required":["name","slug","maxPositions"],"properties":{"name":{"type":"string"},"slug":{"type":"string"},"maxPositions":{"type":"integer"}}},
+      "Deposit":{"type":"object","required":["queueId","identity","amount","asset"],"properties":{"queueId":{"type":"string"},"identity":{"type":"string"},"amount":{"type":"number"},"asset":{"type":"string"},"holdDays":{"type":"integer"}}},
+      "Enroll":{"type":"object","required":["queueId","identity"],"properties":{"queueId":{"type":"string"},"identity":{"type":"string","pattern":"^G[A-Z2-7]{55}$"}}},
+      "EnrollmentList":{"type":"array","items":{"$ref":"#/components/schemas/EnrollmentRecord"}},
+      "EnrollmentRecord":{"type":"object","properties":{"queueId":{"type":"string"},"identity":{"type":"string"},"enrolledAt":{"type":"string","format":"date-time"},"conflict":{"type":"boolean"},"cancelled":{"type":"boolean"}}},
+      "Error":{"type":"object","required":["message"],"properties":{"message":{"type":"string"}}},
+      "EscrowAction":{"type":"object","required":["escrowId"],"properties":{"escrowId":{"type":"string"}}},
+      "EscrowRecord":{"type":"object","properties":{"id":{"type":"string"},"queueId":{"type":"string"},"identity":{"type":"string"},"amount":{"type":"number"},"asset":{"type":"string"},"status":{"type":"string"}}},
+      "Health":{"type":"object","properties":{"status":{"const":"ok"},"timestamp":{"type":"string","format":"date-time"},"environment":{"type":"string"}}},
+      "Message":{"type":"object","properties":{"message":{"type":"string"}}},
+      "PublicQueueStats":{"$ref":"#/components/schemas/QueueStats"},
+      "PublicQueueSummaryList":{"type":"array","items":{"type":"object"}},
+      "Queue":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"slug":{"type":"string"},"status":{"type":"string"}}},
+      "QueueListResponse":{"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/Queue"}},"nextCursor":{"type":["string","null"]},"total":{"type":"integer"}}},
+      "QueueQuery":{"type":"object","properties":{"status":{"type":"string"},"limit":{"type":"integer"},"cursor":{"type":"string"}}},
+      "QueueStats":{"type":"object","properties":{"queueId":{"type":"string"},"total":{"type":"integer"},"advanced":{"type":"integer"},"remaining":{"type":"integer"},"percentAdvanced":{"type":"number"}}},
+      "QueueWithSource":{"allOf":[{"$ref":"#/components/schemas/Queue"},{"type":"object","properties":{"source":{"type":"string"}}}]}
+    }
+  }
+}
